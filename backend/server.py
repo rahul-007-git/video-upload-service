@@ -37,9 +37,7 @@ async def check_status():
 
 @app.get("/videos", response_model=List[VideoModel])
 async def get_videos():
-    conn = psycopg2.connect(
-        database="exampledb", user="docker", password="docker", host="localhost"
-    )
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cur = conn.cursor()
     cur.execute("SELECT * FROM video ORDER BY id DESC")
     rows = cur.fetchall()
@@ -57,17 +55,13 @@ async def get_videos():
 
 @app.post("/videos", status_code=201)
 async def add_video(file: UploadFile):
-    # Save file locally
     file_location = f"{UPLOAD_FOLDER}/{file.filename}"
     with open(file_location, "wb") as f:
         f.write(await file.read())
 
-    uploaded_file_url = f"http://127.0.0.1:8000/uploads/{file.filename}"
+    uploaded_file_url = f"{os.environ.get('BACKEND_URL')}/uploads/{file.filename}"
 
-    # Store URL in database
-    conn = psycopg2.connect(
-        database="exampledb", user="docker", password="docker", host="localhost"
-    )
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cur = conn.cursor()
     cur.execute(
         f"INSERT INTO video (video_title, video_url) VALUES ('{file.filename}', '{uploaded_file_url}')"
